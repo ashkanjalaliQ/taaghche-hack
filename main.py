@@ -3,6 +3,7 @@ from time import sleep
 from PIL import Image
 import pytesseract
 import shutil
+import hazm
 import os
 
 
@@ -22,6 +23,7 @@ class Taaghche:
             'bottom': 790
         }
         self.texts = []
+        self.normalizer = hazm.Normalizer()
 
     def login(self, username, password):
         login_bottun_class = 'profileDropdown_login__1mKoW'
@@ -158,11 +160,8 @@ class Taaghche:
     def __image_to_text(self):
         pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
         extracted_text = pytesseract.image_to_string(self.images_address[-1], lang='fas')
+        extracted_text = self.normalizer.normalize(extracted_text)
         self.texts.append(extracted_text)
-
-    def __save_text_file(self, file_name):
-
-        text_file = open('./text/')
 
     def __crop_images(self, address):
         image = Image.open(address)
@@ -195,11 +194,16 @@ print(texts)
 
 text = ''
 
+replace_character = [
+    [r'\u200c', 'ی'],
+    [r'\n', '']
+]
+
 for i in range(len(texts)):
-    text += texts[i].replace(r'\u200c', 'ی')
+    for j in range(len(replace_character)):
+        text += texts[i].replace(replace_character[j][0], replace_character[j][1])
 
-file = open('text.txt', 'w')
+normalizer = hazm.Normalizer()
+text = normalizer.normalize(text)
+
 print(text)
-file.write(text)
-
-file.close()
