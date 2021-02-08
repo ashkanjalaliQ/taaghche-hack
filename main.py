@@ -1,6 +1,10 @@
 from selenium import webdriver
 from time import sleep
+from PIL import Image
+import pytesseract
+import shutil
 import os
+
 
 class Taaghche:
     def __init__(self, driver):
@@ -8,6 +12,16 @@ class Taaghche:
         self.login_page = 'https://taaghche.com/'
         self.total_pages = 0
         self.current_page_number = 0
+        self.images_path = './images'
+        self.texts_path = './text'
+        self.images_address = []
+        self.crop_info = {
+            'left': 130,
+            'right': 1800,
+            'top': 65,
+            'bottom': 790
+        }
+        self.texts = []
 
     def login(self, username, password):
         login_bottun_class = 'profileDropdown_login__1mKoW'
@@ -50,36 +64,54 @@ class Taaghche:
         if input_value == 'start':
             return input_value
 
-    def select_book(self):
+    def select_book(self, id):
+        self.id = id
         self.__open_my_lib()
         #id = self.__get_book_id()
-        id = 39639
-        print(id)
         if self.__input_checker() == 'start':
             self.driver.maximize_window()
             self.total_pages = int(self.__get_total_pages())
             print(self.total_pages)
             self.__reset_page_number()
-            self.__page_book(id)
 
-    def __page_book(self, id):
+            ## Create Images Dir
+            try:
+                os.mkdir(self.images_path)
+            except OSError:
+                shutil.rmtree(self.images_path)
+                os.mkdir(self.images_path)
+
+            ## Create Texts Dir
+            try:
+                os.mkdir(self.texts_path)
+            except OSError:
+                shutil.rmtree(self.texts_path)
+                os.mkdir(self.texts_path)
+
+            self.__page_book()
+        return self.texts
+
+    def __page_book(self):
         self.page_number = int(self.__get_current_page_number())
         while self.page_number <= self.total_pages:
             self.__situation('save-screenshot')
-            self.__screen_shot(id)
+            self.__screen_shot()
+            self.__image_to_text()
             self.__control_reader_page(next=True)
             self.__situation(status='page-number')
             self.page_number += 1
 
-    def __reset_page_number(self):
-        page_now = self.driver.find_element_by_id('pageNo')
-        page_now = int(page_now.text)
-        self.__situation(status='page-reset')
-        while page_now != 1:
-            self.__control_reader_page(previous=True)
+
+    def __reset_page_number(self, reset=True):
+        if reset:
             page_now = self.driver.find_element_by_id('pageNo')
             page_now = int(page_now.text)
-        self.__situation(status='page_reseted')
+            self.__situation(status='page-reset')
+            while page_now != 1:
+                self.__control_reader_page(previous=True)
+                page_now = self.driver.find_element_by_id('pageNo')
+                page_now = int(page_now.text)
+            self.__situation(status='page-reseted')
 
     def __get_total_pages(self):
         totalpages = self.driver.find_element_by_id('totalPages')
@@ -93,7 +125,7 @@ class Taaghche:
             if isinstance(url[i], int):
                 return int(url[i])
 
-    def __situation(self, status):
+    def __situation(self, status, image_name = ''):
         if status == 'page-number':
             print(f'[*]Page {self.page_number} of {self.total_pages}')
         elif status == 'save-screenshot':
@@ -102,8 +134,10 @@ class Taaghche:
             print(f'[Page {self.page_number}]Screenshot Saved!')
         elif status == 'page-reset':
             print('Page number is being reset ...')
-        elif status == 'page_reseted':
+        elif status == 'page-reseted':
             print('Page number reset!')
+        elif status == 'image-cropped':
+            print(f'[{image_name}] cropped!')
 
     def __get_current_page_number(self):
         current_page = self.driver.find_element_by_id('pageNo')
@@ -117,10 +151,32 @@ class Taaghche:
         elif previous:
             self.driver.find_element_by_id('___prevPage').click()
 
-    def __screen_shot(self, id):
-        self.driver.save_screenshot(f'page{self.page_number}-{id}.jpg')
-        self.__situation(status='screenshot-saved')
+    def __save_images_address(self, address):
+        self.images_address.append(address)
+        print(self.images_address[-1])
 
+    def __image_to_text(self):
+        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
+        extracted_text = pytesseract.image_to_string(self.images_address[-1], lang='fas')
+        self.texts.append(extracted_text)
+
+    def __save_text_file(self, file_name):
+
+        text_file = open('./text/')
+
+    def __crop_images(self, address):
+        image = Image.open(address)
+        image = image.crop((self.crop_info['left'], self.crop_info['top'], self.crop_info['right'], self.crop_info['bottom']))
+        image = image.convert('RGB')
+        image.save(address)
+        self.__situation(status='image-cropped', image_name=address)
+
+    def __screen_shot(self):
+        image_address = f'{self.images_path}/page{self.page_number}-{self.id}.jpg'
+        self.__save_images_address(image_address)
+        self.driver.save_screenshot(self.images_address[-1])
+        self.__crop_images(self.images_address[-1])
+        self.__situation(status='screenshot-saved')
 
 driver_address = 'chromedriver.exe'
 driver = webdriver.Chrome(driver_address)
@@ -134,4 +190,5 @@ info = {
 
 taaghche.login(username=info['username'], password=info['password'])
 
-taaghche.select_book()
+texts = taaghche.select_book(id=39639)
+print(texts)
