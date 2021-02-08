@@ -192,3 +192,14 @@ taaghche.login(username=info['username'], password=info['password'])
 
 texts = taaghche.select_book(id=39639)
 print(texts)
+
+text = ''
+
+for i in range(len(texts)):
+    text += texts[i].replace(r'\u200c', 'ی')
+
+file = open('text.txt', 'w')
+print(text)
+file.write(text)
+
+file.close()
