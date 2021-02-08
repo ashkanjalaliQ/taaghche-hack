@@ -27,7 +27,7 @@ class Taaghche:
         click_continue = self.driver.find_element_by_xpath(continue_xpath)
         click_continue.click()
 
-        sleep(1)
+        sleep(1.5)
 
         ########## Fill in the password
         password_name = 'password'
@@ -57,6 +57,7 @@ class Taaghche:
             self.driver.maximize_window()
             self.total_pages = int(self.__get_total_pages())
             print(self.total_pages)
+            self.__reset_page_number()
             self.__page_book(id)
 
     def __page_book(self, id):
@@ -68,6 +69,15 @@ class Taaghche:
             self.__situation(status='page-number')
             self.page_number += 1
 
+    def __reset_page_number(self):
+        page_now = self.driver.find_element_by_id('pageNo')
+        page_now = int(page_now.text)
+        self.__situation(status='page-reset')
+        while page_now != 1:
+            self.__control_reader_page(previous=True)
+            page_now = self.driver.find_element_by_id('pageNo')
+            page_now = int(page_now.text)
+        self.__situation(status='page_reseted')
 
     def __get_total_pages(self):
         totalpages = self.driver.find_element_by_id('totalPages')
@@ -81,6 +91,10 @@ class Taaghche:
             print(f'[Page {self.page_number}]Screenshot is saving...')
         elif status == 'screenshot-saved':
             print(f'[Page {self.page_number}]Screenshot Saved!')
+        elif status == 'page-reset':
+            print('Page number is being reset ...')
+        elif status == 'page_reseted':
+            print('Page number reset!')
 
     def __get_current_page_number(self):
         current_page = self.driver.find_element_by_id('pageNo')
