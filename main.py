@@ -52,7 +52,7 @@ class Taaghche:
 
     def select_book(self, id):
         self.__open_my_lib()
-        
+
         if self.__input_checker() == 'start':
             self.driver.maximize_window()
             self.total_pages = int(self.__get_total_pages())
@@ -62,18 +62,25 @@ class Taaghche:
     def __page_book(self, id):
         self.page_number = int(self.__get_current_page_number())
         while self.page_number <= self.total_pages:
+            self.__situation('save-screenshot')
             self.__screen_shot(id)
             self.__control_reader_page(next=True)
-            self.__situation()
+            self.__situation(status='page-number')
             self.page_number += 1
+
 
     def __get_total_pages(self):
         totalpages = self.driver.find_element_by_id('totalPages')
         totalpages = totalpages.text
         return totalpages
 
-    def __situation(self):
-        print(f'[*]Page {self.page_number} of {self.total_pages}')
+    def __situation(self, status):
+        if status == 'page-number':
+            print(f'[*]Page {self.page_number} of {self.total_pages}')
+        elif status == 'save-screenshot':
+            print(f'[Page {self.page_number}]Screenshot is saving...')
+        elif status == 'screenshot-saved':
+            print(f'[Page {self.page_number}]Screenshot Saved!')
 
     def __get_current_page_number(self):
         current_page = self.driver.find_element_by_id('pageNo')
@@ -89,6 +96,7 @@ class Taaghche:
 
     def __screen_shot(self, id):
         self.driver.save_screenshot(f'page{self.page_number}-{id}.jpg')
+        self.__situation(status='screenshot-saved')
 
 
 driver_address = 'chromedriver.exe'
