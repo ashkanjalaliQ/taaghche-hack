@@ -50,9 +50,11 @@ class Taaghche:
         if input_value == 'start':
             return input_value
 
-    def select_book(self, id):
+    def select_book(self):
         self.__open_my_lib()
-
+        #id = self.__get_book_id()
+        id = 39639
+        print(id)
         if self.__input_checker() == 'start':
             self.driver.maximize_window()
             self.total_pages = int(self.__get_total_pages())
@@ -83,6 +85,13 @@ class Taaghche:
         totalpages = self.driver.find_element_by_id('totalPages')
         totalpages = totalpages.text
         return totalpages
+
+    def __get_book_id(self):
+        url = str(self.driver.current_url)
+        url = url.split('/')
+        for i in range(len(url)):
+            if isinstance(url[i], int):
+                return int(url[i])
 
     def __situation(self, status):
         if status == 'page-number':
@@ -125,4 +134,4 @@ info = {
 
 taaghche.login(username=info['username'], password=info['password'])
 
-taaghche.select_book(id=39639)
+taaghche.select_book()
